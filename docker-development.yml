@@ -1,0 +1,24 @@
+services: 
+  web: 
+    build: . 
+    ports: 
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment: 
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+    depends_on:
+      - mongo
+  mongo:
+    image: mongo:latest
+    volumes: 
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    ports: 
+      - "27017:27017"
+volumes: 
+  mongo_data: 
+    external: False
