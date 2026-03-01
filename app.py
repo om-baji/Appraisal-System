@@ -1,5 +1,5 @@
 from flask import Flask, request 
-from mongoConnect import collection, client
+from model.Employee_mode import collection 
 
 app = Flask(__name__) 
 
@@ -12,22 +12,24 @@ def index():
 def addUser(): 
     body = request.get_json()
     try: 
-        username = body['user']
-        if not username: 
+        if not body['username']: 
                 return "No usernamme", 400 
-        query = { "name": username }
+        findUser = collection.find_one({"username": body['username']}, {"_id": 0})
+        if findUser: 
+            return "User already exist", 400
+        query = { "username": body['username'], "password": body["password"] }
         collection.insert_one(query)
-        return "Added to the Database", 200 
+        return f"{body['username']} added to the Database", 200 
     except Exception as e : 
-        return e , 400
+        return {str(e)} , 400
 
 @app.get("/getUsers")
 def getUsers(): 
     try: 
-        employees = list(collection.find({}, {"name": True, "_id": False }))
+        employees = list(collection.find({}, {"_id": 0}))
         return employees, 200 
     except Exception as e: 
-        return e, 400 
+        return str(e), 400 
 
 
 if __name__ == "__main__": 

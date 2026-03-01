@@ -8,4 +8,3 @@ password = os.environ["MONGO_PASSWORD"]
 uri = f"mongodb://{username}:{password}@mongo:27017/"
 client = MongoClient(uri)
 database = client["employees"]
-collection = database['employee']

@@ -4,4 +4,4 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 EXPOSE 5000 
 COPY . . 
-CMD ["python3", "app.py", "--DEBUG=True"]
+CMD ["flask", "run", "--debug", "--host=0.0.0.0"]
