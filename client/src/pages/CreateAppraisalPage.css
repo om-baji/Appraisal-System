@@ -1,0 +1,17 @@
+.create-appraisal-page {
+    max-width: 720px;
+}
+
+.create-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-xl);
+    transition: color var(--transition-fast);
+}
+
+.create-back:hover {
+    color: var(--color-text-primary);
+}

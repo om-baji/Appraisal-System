@@ -1,0 +1,782 @@
+openapi: 3.0.3
+info:
+  title: Appraisal System API
+  description: REST API for an Employee Appraisal Management System built with Flask and MongoDB.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+tags:
+  - name: General
+    description: Health check and index
+  - name: Employee
+    description: User signup, login, logout, and profile operations
+  - name: Appraisal
+    description: CRUD and workflow operations for appraisals
+
+paths:
+  /:
+    get:
+      tags: [General]
+      summary: Index page
+      description: Renders the main HTML index page.
+      operationId: index
+      responses:
+        "200":
+          description: HTML page returned successfully
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /health:
+    get:
+      tags: [General]
+      summary: Health check
+      description: Returns a plain-text message indicating the service is running.
+      operationId: health
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Service is up and running
+
+  /docs:
+    get:
+      tags: [General]
+      summary: API documentation (Swagger UI)
+      description: Serves an interactive Swagger UI page for exploring and testing the API.
+      operationId: docs
+      responses:
+        "200":
+          description: Swagger UI HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /openapi.yaml:
+    get:
+      tags: [General]
+      summary: OpenAPI specification file
+      description: Returns the raw OpenAPI 3.0 YAML specification.
+      operationId: openapiSpec
+      responses:
+        "200":
+          description: OpenAPI spec in YAML format
+          content:
+            text/yaml:
+              schema:
+                type: string
+
+  /api/user/signup:
+    post:
+      tags: [Employee]
+      summary: Register a new employee
+      operationId: createEmployee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "201":
+          description: Employee created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User successfully added in the database
+                  user:
+                    $ref: "#/components/schemas/Employee"
+        "400":
+          description: Missing required field or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/user/login:
+    post:
+      tags: [Employee]
+      summary: Login an employee
+      description: Authenticates the employee and creates a server-side session.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login sucessfull
+                  user:
+                    $ref: "#/components/schemas/Employee"
+        "400":
+          description: Missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/user/logout:
+    post:
+      tags: [Employee]
+      summary: Logout the current user
+      description: Clears the server-side session.
+      operationId: logoutUser
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logout successful
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/user/me:
+    get:
+      tags: [Employee]
+      summary: Get currently logged-in user
+      description: Returns session information for the authenticated user.
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logged_in:
+                    type: boolean
+                    example: true
+                  employee_id:
+                    type: string
+                    example: EMP001
+                  employee_name:
+                    type: string
+                    example: John Doe
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Not logged in
+                  logged_in:
+                    type: boolean
+                    example: false
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/user/:
+    get:
+      tags: [Employee]
+      summary: Get all employees
+      operationId: getAllUsers
+      responses:
+        "200":
+          description: List of all employees
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Fetched all users successfully
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Employee"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/user/{employee_id}:
+    get:
+      tags: [Employee]
+      summary: Get a specific employee by employee_id
+      operationId: getUser
+      parameters:
+        - $ref: "#/components/parameters/EmployeeIdPath"
+      responses:
+        "200":
+          description: Employee found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Got user successfully
+                  user:
+                    $ref: "#/components/schemas/Employee"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/:
+    post:
+      tags: [Appraisal]
+      summary: Create a new appraisal
+      description: >
+        Creates an appraisal for the given employee. The reviewer is
+        automatically set from the logged-in user's session.
+      operationId: createAppraisal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppraisalRequest"
+      responses:
+        "201":
+          description: Appraisal created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Appraisal created successfully
+                  appraisal:
+                    $ref: "#/components/schemas/Appraisal"
+        "400":
+          description: Missing required field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Employee not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    get:
+      tags: [Appraisal]
+      summary: Get all appraisals
+      description: Returns a list of appraisals with optional filters.
+      operationId: getAllAppraisals
+      parameters:
+        - name: employee_id
+          in: query
+          description: Filter by employee ID
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by appraisal status
+          required: false
+          schema:
+            $ref: "#/components/schemas/AppraisalStatus"
+      responses:
+        "200":
+          description: List of appraisals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 3
+                  appraisals:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Appraisal"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/{appraisal_id}:
+    get:
+      tags: [Appraisal]
+      summary: Get a specific appraisal
+      operationId: getAppraisal
+      parameters:
+        - $ref: "#/components/parameters/AppraisalIdPath"
+      responses:
+        "200":
+          description: Appraisal details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appraisal"
+        "400":
+          description: Invalid appraisal ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Appraisal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags: [Appraisal]
+      summary: Update an appraisal
+      description: >
+        Updates the specified appraisal. Only the allowed fields can be
+        modified; employee_id and reviewer info cannot be changed.
+      operationId: updateAppraisal
+      parameters:
+        - $ref: "#/components/parameters/AppraisalIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppraisalRequest"
+      responses:
+        "200":
+          description: Appraisal updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Appraisal updated successfully
+                  appraisal:
+                    $ref: "#/components/schemas/Appraisal"
+        "400":
+          description: Invalid appraisal ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Appraisal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags: [Appraisal]
+      summary: Delete an appraisal
+      operationId: deleteAppraisal
+      parameters:
+        - $ref: "#/components/parameters/AppraisalIdPath"
+      responses:
+        "200":
+          description: Appraisal deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Appraisal deleted successfully
+        "400":
+          description: Invalid appraisal ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Appraisal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/{appraisal_id}/status:
+    patch:
+      tags: [Appraisal]
+      summary: Update appraisal status
+      description: >
+        Transitions an appraisal through its workflow statuses
+        (draft → submitted → approved / rejected).
+      operationId: updateAppraisalStatus
+      parameters:
+        - $ref: "#/components/parameters/AppraisalIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  $ref: "#/components/schemas/AppraisalStatus"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Appraisal status updated successfully
+                  appraisal:
+                    $ref: "#/components/schemas/Appraisal"
+        "400":
+          description: Invalid appraisal ID or invalid status value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Appraisal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/my/appraisals:
+    get:
+      tags: [Appraisal]
+      summary: Get my appraisals
+      description: Returns appraisals where the logged-in user is the employee being appraised.
+      operationId: getMyAppraisals
+      responses:
+        "200":
+          description: List of the current user's appraisals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  employee_id:
+                    type: string
+                    example: EMP001
+                  appraisals:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Appraisal"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/my/reviews:
+    get:
+      tags: [Appraisal]
+      summary: Get my reviews
+      description: Returns appraisals where the logged-in user is the reviewer.
+      operationId: getMyReviews
+      responses:
+        "200":
+          description: List of appraisals reviewed by the current user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  reviewer_id:
+                    type: string
+                    example: EMP001
+                  appraisals:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Appraisal"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+# ════════════════════════════════════════════════════════════════════════
+# Components
+# ════════════════════════════════════════════════════════════════════════
+components:
+  # ── Reusable Parameters ──────────────────────────────────────────────
+  parameters:
+    EmployeeIdPath:
+      name: employee_id
+      in: path
+      required: true
+      description: Auto-generated employee ID (e.g. EMP001)
+      schema:
+        type: string
+        example: EMP001
+
+    AppraisalIdPath:
+      name: appraisal_id
+      in: path
+      required: true
+      description: MongoDB ObjectId of the appraisal
+      schema:
+        type: string
+        example: 507f1f77bcf86cd799439011
+
+  # ── Schemas ──────────────────────────────────────────────────────────
+  schemas:
+    # ─ Enums ─
+    AppraisalStatus:
+      type: string
+      enum:
+        - draft
+        - submitted
+        - approved
+        - rejected
+      example: draft
+
+    # ─ Employee ─
+    Employee:
+      type: object
+      description: Serialized employee (password excluded)
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+          example: 60d0fe4f5311236168a109ca
+        employee_id:
+          type: string
+          description: Auto-incremented employee code
+          example: EMP001
+        employee_name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+
+    # ─ Appraisal ─
+    Appraisal:
+      type: object
+      description: Serialized appraisal document
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+          example: 60d0fe4f5311236168a109cb
+        employee_id:
+          type: string
+          example: EMP001
+        employee_name:
+          type: string
+          example: John Doe
+        reviewer_id:
+          type: string
+          example: EMP002
+        reviewer_name:
+          type: string
+          example: Jane Smith
+        appraisal_period:
+          type: string
+          description: "Period being appraised, e.g. Q1 2026"
+          example: Q1 2026
+        performance_rating:
+          type: integer
+          description: Rating on a 1-5 scale
+          minimum: 0
+          maximum: 5
+          example: 4
+        goals_achieved:
+          type: array
+          items:
+            type: string
+          example:
+            - Completed project X
+            - Improved test coverage
+        strengths:
+          type: string
+          example: Strong technical skills
+        areas_for_improvement:
+          type: string
+          example: Time management
+        comments:
+          type: string
+          example: Overall good performance
+        status:
+          $ref: "#/components/schemas/AppraisalStatus"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # ─ Request Bodies ─
+    SignupRequest:
+      type: object
+      required:
+        - employee_name
+        - password
+        - email
+      properties:
+        employee_name:
+          type: string
+          example: John Doe
+        password:
+          type: string
+          format: password
+          example: s3cur3P@ss
+        email:
+          type: string
+          format: email
+          example: john@example.com
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: s3cur3P@ss
+
+    CreateAppraisalRequest:
+      type: object
+      required:
+        - employee_id
+        - appraisal_period
+      properties:
+        employee_id:
+          type: string
+          example: EMP001
+        appraisal_period:
+          type: string
+          example: Q1 2026
+        performance_rating:
+          type: integer
+          minimum: 0
+          maximum: 5
+          default: 0
+        goals_achieved:
+          type: array
+          items:
+            type: string
+          default: []
+        strengths:
+          type: string
+          default: ""
+        areas_for_improvement:
+          type: string
+          default: ""
+        comments:
+          type: string
+          default: ""
+        status:
+          $ref: "#/components/schemas/AppraisalStatus"
+
+    UpdateAppraisalRequest:
+      type: object
+      description: Only the fields provided will be updated.
+      properties:
+        appraisal_period:
+          type: string
+        performance_rating:
+          type: integer
+          minimum: 0
+          maximum: 5
+        goals_achieved:
+          type: array
+          items:
+            type: string
+        strengths:
+          type: string
+        areas_for_improvement:
+          type: string
+        comments:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppraisalStatus"
+
+    # ─ Common ─
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Something went wrong
+
+  # ── Reusable Responses ───────────────────────────────────────────────
+  responses:
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

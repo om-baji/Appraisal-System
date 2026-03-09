@@ -1,0 +1,90 @@
+.appraisal-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    max-width: 640px;
+}
+
+.appraisal-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+}
+
+.appraisal-form-rating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.appraisal-form-rating-star {
+    cursor: pointer;
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.appraisal-form-rating-star:hover {
+    transform: scale(1.15);
+}
+
+.appraisal-form-rating-star-active {
+    color: var(--color-warning);
+}
+
+.appraisal-form-goals {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.appraisal-form-goals-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.appraisal-form-goal-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+}
+
+.appraisal-form-goal-chip button {
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    transition: color var(--transition-fast);
+}
+
+.appraisal-form-goal-chip button:hover {
+    color: var(--color-error);
+}
+
+.appraisal-form-goal-input-row {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.appraisal-form-goal-input-row .input-field {
+    flex: 1;
+}
+
+.appraisal-form-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 600px) {
+    .appraisal-form-row {
+        grid-template-columns: 1fr;
+    }
+}

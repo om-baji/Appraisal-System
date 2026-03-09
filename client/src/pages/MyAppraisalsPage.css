@@ -1,0 +1,35 @@
+.appraisals-page-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.filter-tab {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    background: transparent;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.filter-tab:hover {
+    color: var(--color-text-secondary);
+    background: var(--color-bg-hover);
+}
+
+.filter-tab-active {
+    color: var(--color-text-primary);
+    background: var(--color-bg-elevated);
+    border-color: var(--color-border);
+}
+
+.appraisals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-lg);
+}

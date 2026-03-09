@@ -1,0 +1,194 @@
+.layout {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.layout-sidebar {
+    width: 240px;
+    height: 100%;
+    background: var(--color-bg-secondary);
+    border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.layout-sidebar-header {
+    padding: var(--space-xl);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.layout-sidebar-logo {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+}
+
+.layout-sidebar-logo span {
+    color: var(--color-text-muted);
+    font-weight: 400;
+    font-size: 0.75rem;
+    margin-left: var(--space-sm);
+}
+
+.layout-sidebar-nav {
+    flex: 1;
+    padding: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+}
+
+.layout-sidebar-section-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: var(--space-lg) var(--space-md) var(--space-sm);
+}
+
+.layout-nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.layout-nav-link:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+.layout-nav-link-active {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-weight: 500;
+}
+
+.layout-sidebar-footer {
+    padding: var(--space-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+.layout-user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm);
+}
+
+.layout-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+}
+
+.layout-user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.layout-user-name {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layout-user-id {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+}
+
+.layout-logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.layout-logout-btn:hover {
+    background: var(--color-error-subtle);
+    color: var(--color-error);
+}
+
+.layout-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.layout-topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-xl);
+    flex-shrink: 0;
+    background: var(--color-bg-primary);
+}
+
+.layout-topbar-title {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+}
+
+.layout-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-2xl);
+}
+
+@media (max-width: 768px) {
+    .layout-sidebar {
+        width: 64px;
+    }
+
+    .layout-sidebar-logo span,
+    .layout-nav-link span,
+    .layout-sidebar-section-label,
+    .layout-user-details {
+        display: none;
+    }
+
+    .layout-nav-link {
+        justify-content: center;
+        padding: var(--space-sm);
+    }
+
+    .layout-user-info {
+        justify-content: center;
+    }
+
+    .layout-content {
+        padding: var(--space-lg);
+    }
+}

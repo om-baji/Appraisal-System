@@ -1,0 +1,26 @@
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3xl) var(--space-xl);
+    text-align: center;
+    gap: var(--space-lg);
+}
+
+.empty-state-icon {
+    color: var(--color-text-muted);
+    opacity: 0.6;
+}
+
+.empty-state-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.empty-state-description {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    max-width: 320px;
+}
