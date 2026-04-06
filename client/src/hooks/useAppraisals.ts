@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import toast from "react-hot-toast"
 import { appraisalApi } from "@/lib/api"
 import type {
+    AppraisalDecisionPayload,
     AppraisalStatus,
     CreateAppraisalPayload,
     UpdateAppraisalPayload,
@@ -36,6 +37,28 @@ export function useMyReviews() {
     return useQuery({
         queryKey: ["appraisals", "reviews"],
         queryFn: () => appraisalApi.getMyReviews(),
+    })
+}
+
+export function useMySummary() {
+    return useQuery({
+        queryKey: ["appraisals", "summary", "mine"],
+        queryFn: () => appraisalApi.getMySummary(),
+    })
+}
+
+export function useMyReviewQueue(filters?: { status?: AppraisalStatus; limit?: number }) {
+    return useQuery({
+        queryKey: ["appraisals", "review-queue", filters],
+        queryFn: () => appraisalApi.getMyReviewQueue(filters),
+    })
+}
+
+export function useEmployeeHistory(employeeId?: string, limit?: number) {
+    return useQuery({
+        queryKey: ["appraisals", "history", employeeId, limit],
+        queryFn: () => appraisalApi.getEmployeeHistory(employeeId!, limit),
+        enabled: !!employeeId,
     })
 }
 
@@ -97,6 +120,37 @@ export function useUpdateAppraisalStatus() {
         },
         onError: () => {
             toast.error("Failed to update status")
+        },
+    })
+}
+
+export function useSubmitAppraisal() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (id: string) => appraisalApi.submit(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["appraisals"] })
+            toast.success("Appraisal submitted")
+        },
+        onError: () => {
+            toast.error("Failed to submit appraisal")
+        },
+    })
+}
+
+export function useDecideAppraisal() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: AppraisalDecisionPayload }) =>
+            appraisalApi.decide(id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["appraisals"] })
+            toast.success("Decision saved")
+        },
+        onError: () => {
+            toast.error("Failed to save decision")
         },
     })
 }

@@ -559,6 +559,202 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /api/appraisals/my/summary:
+    get:
+      tags: [Appraisal]
+      summary: Get my appraisal summary
+      description: Returns dashboard summary metrics for the logged-in user.
+      operationId: getMySummary
+      responses:
+        "200":
+          description: Summary metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyAppraisalSummary"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/my/review-queue:
+    get:
+      tags: [Appraisal]
+      summary: Get my review queue
+      description: Returns appraisals assigned to the current reviewer for a given status.
+      operationId: getMyReviewQueue
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AppraisalStatus"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+      responses:
+        "200":
+          description: Review queue list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyReviewQueueResponse"
+        "400":
+          description: Invalid filter or limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/employee/{employee_id}/history:
+    get:
+      tags: [Appraisal]
+      summary: Get employee appraisal history
+      description: Returns latest appraisals for a specific employee.
+      operationId: getEmployeeAppraisalHistory
+      parameters:
+        - $ref: "#/components/parameters/EmployeeIdPath"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 12
+      responses:
+        "200":
+          description: Appraisal history list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppraisalHistoryResponse"
+        "400":
+          description: Invalid limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/{appraisal_id}/submit:
+    post:
+      tags: [Appraisal]
+      summary: Submit appraisal
+      description: Submits a draft appraisal for review approval.
+      operationId: submitAppraisal
+      parameters:
+        - $ref: "#/components/parameters/AppraisalIdPath"
+      responses:
+        "200":
+          description: Appraisal submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppraisalWriteResponse"
+        "400":
+          description: Invalid appraisal ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Current user cannot submit this appraisal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Appraisal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Appraisal is not in draft status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/appraisals/{appraisal_id}/decision:
+    patch:
+      tags: [Appraisal]
+      summary: Approve or reject appraisal
+      description: Applies reviewer decision to a submitted appraisal.
+      operationId: decideAppraisal
+      parameters:
+        - $ref: "#/components/parameters/AppraisalIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppraisalDecisionRequest"
+      responses:
+        "200":
+          description: Appraisal decision applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppraisalWriteResponse"
+        "400":
+          description: Invalid appraisal ID or decision payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Current user cannot decide this appraisal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Appraisal not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Appraisal is not in submitted status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
 # ════════════════════════════════════════════════════════════════════════
 # Components
 # ════════════════════════════════════════════════════════════════════════
@@ -763,6 +959,82 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/AppraisalStatus"
+
+    AppraisalWriteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Appraisal submitted successfully
+        appraisal:
+          $ref: "#/components/schemas/Appraisal"
+
+    MyAppraisalSummary:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          example: EMP001
+        my_appraisals_count:
+          type: integer
+          example: 5
+        my_reviews_count:
+          type: integer
+          example: 7
+        approved_count:
+          type: integer
+          example: 3
+        submitted_reviews_count:
+          type: integer
+          example: 2
+        average_rating:
+          type: number
+          format: float
+          example: 4.2
+
+    AppraisalHistoryResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 4
+        employee_id:
+          type: string
+          example: EMP001
+        appraisals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appraisal"
+
+    MyReviewQueueResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 2
+        reviewer_id:
+          type: string
+          example: EMP002
+        status:
+          $ref: "#/components/schemas/AppraisalStatus"
+        appraisals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appraisal"
+
+    AppraisalDecisionRequest:
+      type: object
+      required:
+        - decision
+      properties:
+        decision:
+          type: string
+          enum:
+            - approved
+            - rejected
+        comments:
+          type: string
+          example: Strong results this cycle.
 
     # ─ Common ─
     Error:

@@ -1,6 +1,7 @@
 import os
+
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, send_from_directory
 
 from routes.appraisal import appraisal_bp
 from routes.employee import employee_bp
@@ -30,7 +31,7 @@ def openapi_spec():
 
 @app.get("/docs")
 def docs():
-    return '''
+    return """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -46,7 +47,11 @@ def docs():
         </script>
     </body>
     </html>
-    '''
+    """
+
+
+def create_app():
+    return app
 
 
 if __name__ == "__main__":

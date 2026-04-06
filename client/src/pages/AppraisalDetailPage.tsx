@@ -3,11 +3,12 @@ import { useParams, useNavigate } from "react-router"
 import { ArrowLeft, Pencil, Trash2, Star } from "lucide-react"
 import {
     useAppraisal,
+    useDecideAppraisal,
     useDeleteAppraisal,
+    useSubmitAppraisal,
     useUpdateAppraisal,
-    useUpdateAppraisalStatus,
 } from "@/hooks/useAppraisals"
-import type { AppraisalStatus, UpdateAppraisalPayload } from "@/types"
+import type { UpdateAppraisalPayload } from "@/types"
 import StatusBadge from "@/components/StatusBadge"
 import Modal from "@/components/Modal"
 import AppraisalForm from "@/components/AppraisalForm"
@@ -20,10 +21,12 @@ export default function AppraisalDetailPage() {
     const { data: appraisal, isLoading } = useAppraisal(id!)
     const deleteAppraisal = useDeleteAppraisal()
     const updateAppraisal = useUpdateAppraisal()
-    const updateStatus = useUpdateAppraisalStatus()
+    const submitAppraisal = useSubmitAppraisal()
+    const decideAppraisal = useDecideAppraisal()
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
+    const [decisionComment, setDecisionComment] = useState("")
 
     if (isLoading) return <Spinner />
     if (!appraisal) return null
@@ -34,8 +37,18 @@ export default function AppraisalDetailPage() {
         })
     }
 
-    const handleStatusChange = (status: AppraisalStatus) => {
-        updateStatus.mutate({ id: appraisal.id, status })
+    const handleSubmitWorkflow = () => {
+        submitAppraisal.mutate(appraisal.id)
+    }
+
+    const handleDecision = (decision: "approved" | "rejected") => {
+        decideAppraisal.mutate({
+            id: appraisal.id,
+            payload: {
+                decision,
+                comments: decisionComment.trim() || undefined,
+            },
+        })
     }
 
     const handleUpdate = (payload: UpdateAppraisalPayload) => {
@@ -171,40 +184,36 @@ export default function AppraisalDetailPage() {
                             {appraisal.status === "draft" && (
                                 <button
                                     className="btn btn-secondary btn-sm"
-                                    onClick={() => handleStatusChange("submitted")}
-                                    disabled={updateStatus.isPending}
+                                    onClick={handleSubmitWorkflow}
+                                    disabled={submitAppraisal.isPending}
                                 >
-                                    Submit
+                                    {submitAppraisal.isPending ? "Submitting..." : "Submit"}
                                 </button>
                             )}
                             {appraisal.status === "submitted" && (
                                 <>
+                                    <textarea
+                                        className="textarea-field"
+                                        value={decisionComment}
+                                        onChange={(e) => setDecisionComment(e.target.value)}
+                                        placeholder="Decision notes (optional)"
+                                    />
                                     <button
                                         className="btn btn-success btn-sm"
-                                        onClick={() => handleStatusChange("approved")}
-                                        disabled={updateStatus.isPending}
+                                        onClick={() => handleDecision("approved")}
+                                        disabled={decideAppraisal.isPending}
                                     >
-                                        Approve
+                                        {decideAppraisal.isPending ? "Saving..." : "Approve"}
                                     </button>
                                     <button
                                         className="btn btn-danger btn-sm"
-                                        onClick={() => handleStatusChange("rejected")}
-                                        disabled={updateStatus.isPending}
+                                        onClick={() => handleDecision("rejected")}
+                                        disabled={decideAppraisal.isPending}
                                     >
-                                        Reject
+                                        {decideAppraisal.isPending ? "Saving..." : "Reject"}
                                     </button>
                                 </>
                             )}
-                            {(appraisal.status === "approved" ||
-                                appraisal.status === "rejected") && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => handleStatusChange("draft")}
-                                        disabled={updateStatus.isPending}
-                                    >
-                                        Reset to Draft
-                                    </button>
-                                )}
                         </div>
                     </div>
                 </>

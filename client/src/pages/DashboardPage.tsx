@@ -6,7 +6,7 @@ import {
     Star,
     Plus,
 } from "lucide-react"
-import { useMyAppraisals, useMyReviews } from "@/hooks/useAppraisals"
+import { useMyAppraisals, useMyReviewQueue, useMySummary } from "@/hooks/useAppraisals"
 import StatsCard from "@/components/StatsCard"
 import AppraisalCard from "@/components/AppraisalCard"
 import Spinner from "@/components/Spinner"
@@ -16,23 +16,21 @@ import "./DashboardPage.css"
 export default function DashboardPage() {
     const navigate = useNavigate()
     const { data: myAppraisals, isLoading: loadingAppraisals } = useMyAppraisals()
-    const { data: myReviews, isLoading: loadingReviews } = useMyReviews()
+    const { data: summary, isLoading: loadingSummary } = useMySummary()
+    const { data: reviewQueue, isLoading: loadingQueue } = useMyReviewQueue({
+        status: "submitted",
+        limit: 6,
+    })
 
-    if (loadingAppraisals || loadingReviews) return <Spinner />
+    if (loadingAppraisals || loadingSummary || loadingQueue) return <Spinner />
 
     const appraisals = myAppraisals?.appraisals ?? []
-    const reviews = myReviews?.appraisals ?? []
+    const queue = reviewQueue?.appraisals ?? []
 
-    const approvedCount = appraisals.filter((a) => a.status === "approved").length
-    const pendingReviews = reviews.filter((a) => a.status === "submitted").length
-
+    const approvedCount = summary?.approved_count ?? 0
+    const pendingReviews = summary?.submitted_reviews_count ?? 0
     const avgRating =
-        appraisals.length > 0
-            ? (
-                appraisals.reduce((sum, a) => sum + a.performance_rating, 0) /
-                appraisals.length
-            ).toFixed(1)
-            : "–"
+        typeof summary?.average_rating === "number" ? summary.average_rating.toFixed(1) : "0.0"
 
     const recentAppraisals = [...appraisals]
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
@@ -55,7 +53,7 @@ export default function DashboardPage() {
                 <StatsCard
                     icon={<FileText size={20} />}
                     label="My Appraisals"
-                    value={appraisals.length}
+                    value={summary?.my_appraisals_count ?? appraisals.length}
                 />
                 <StatsCard
                     icon={<ClipboardCheck size={20} />}
@@ -95,6 +93,25 @@ export default function DashboardPage() {
                                 Create Appraisal
                             </button>
                         }
+                    />
+                )}
+            </div>
+
+            <div className="dashboard-section">
+                <div className="dashboard-section-header">
+                    <h2 className="dashboard-section-title">Review Queue</h2>
+                </div>
+                {queue.length > 0 ? (
+                    <div className="dashboard-grid">
+                        {queue.map((appraisal) => (
+                            <AppraisalCard key={appraisal.id} appraisal={appraisal} />
+                        ))}
+                    </div>
+                ) : (
+                    <EmptyState
+                        icon={<ClipboardCheck size={40} />}
+                        title="No pending reviews"
+                        description="Submitted appraisals assigned to you will appear here"
                     />
                 )}
             </div>

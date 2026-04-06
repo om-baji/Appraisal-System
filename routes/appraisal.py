@@ -7,6 +7,7 @@ from model.appraisalModel import appraisal_serializer, collection
 from model.employeeModel import collection as employee_collection
 
 appraisal_bp = Blueprint("appraisal", __name__, url_prefix="/api/appraisals")
+valid_statuses = ["draft", "submitted", "approved", "rejected"]
 
 
 @appraisal_bp.post("/")
@@ -94,6 +95,101 @@ def get_all_appraisals():
             }
         ), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@appraisal_bp.get("/my/summary")
+def get_my_summary():
+    try:
+        if "employee_id" not in session:
+            return jsonify({"error": "You must be logged in"}), 401
+
+        employee_id = session["employee_id"]
+        my_appraisals = list(collection.find({"employee_id": employee_id}))
+        my_reviews = list(collection.find({"reviewer_id": employee_id}))
+
+        approved_count = len(
+            [appraisal for appraisal in my_appraisals if appraisal.get("status") == "approved"]
+        )
+        submitted_reviews_count = len(
+            [appraisal for appraisal in my_reviews if appraisal.get("status") == "submitted"]
+        )
+
+        avg_rating = 0
+        if len(my_appraisals) > 0:
+            avg_rating = round(
+                sum(appraisal.get("performance_rating", 0) for appraisal in my_appraisals)
+                / len(my_appraisals),
+                1,
+            )
+
+        return jsonify(
+            {
+                "employee_id": employee_id,
+                "my_appraisals_count": len(my_appraisals),
+                "my_reviews_count": len(my_reviews),
+                "approved_count": approved_count,
+                "submitted_reviews_count": submitted_reviews_count,
+                "average_rating": avg_rating,
+            }
+        ), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@appraisal_bp.get("/my/review-queue")
+def get_my_review_queue():
+    try:
+        if "employee_id" not in session:
+            return jsonify({"error": "You must be logged in"}), 401
+
+        reviewer_id = session["employee_id"]
+        status = request.args.get("status", "submitted")
+        limit = request.args.get("limit", default=20, type=int)
+
+        if status not in valid_statuses:
+            return jsonify({"error": f"Invalid status. Must be one of: {valid_statuses}"}), 400
+
+        if limit <= 0:
+            return jsonify({"error": "Limit must be greater than 0"}), 400
+
+        appraisals = list(
+            collection.find({"reviewer_id": reviewer_id, "status": status})
+            .sort("updated_at", -1)
+            .limit(limit)
+        )
+
+        return jsonify(
+            {
+                "count": len(appraisals),
+                "reviewer_id": reviewer_id,
+                "status": status,
+                "appraisals": [appraisal_serializer(appraisal) for appraisal in appraisals],
+            }
+        ), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@appraisal_bp.get("/employee/<employee_id>/history")
+def get_employee_appraisal_history(employee_id):
+    try:
+        limit = request.args.get("limit", default=12, type=int)
+        if limit <= 0:
+            return jsonify({"error": "Limit must be greater than 0"}), 400
+
+        appraisals = list(
+            collection.find({"employee_id": employee_id}).sort("created_at", -1).limit(limit)
+        )
+
+        return jsonify(
+            {
+                "count": len(appraisals),
+                "employee_id": employee_id,
+                "appraisals": [appraisal_serializer(appraisal) for appraisal in appraisals],
+            }
+        ), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -200,7 +296,6 @@ def update_appraisal_status(appraisal_id):
             return jsonify({"error": "Status field is required"}), 400
 
         # Validate status value
-        valid_statuses = ["draft", "submitted", "approved", "rejected"]
         if data["status"] not in valid_statuses:
             return jsonify(
                 {"error": f"Invalid status. Must be one of: {valid_statuses}"}
@@ -225,6 +320,85 @@ def update_appraisal_status(appraisal_id):
             }
         ), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@appraisal_bp.post("/<appraisal_id>/submit")
+def submit_appraisal(appraisal_id):
+    try:
+        if "employee_id" not in session:
+            return jsonify({"error": "You must be logged in"}), 401
+
+        if not ObjectId.is_valid(appraisal_id):
+            return jsonify({"error": "Invalid appraisal ID"}), 400
+
+        appraisal = collection.find_one({"_id": ObjectId(appraisal_id)})
+        if not appraisal:
+            return jsonify({"error": "Appraisal not found"}), 404
+
+        if appraisal.get("reviewer_id") != session["employee_id"]:
+            return jsonify({"error": "Only the assigned reviewer can submit this appraisal"}), 403
+
+        if appraisal.get("status") != "draft":
+            return jsonify({"error": "Only draft appraisals can be submitted"}), 409
+
+        collection.update_one(
+            {"_id": ObjectId(appraisal_id)},
+            {"$set": {"status": "submitted", "updated_at": datetime.now()}},
+        )
+
+        updated_appraisal = collection.find_one({"_id": ObjectId(appraisal_id)})
+
+        return jsonify(
+            {
+                "message": "Appraisal submitted successfully",
+                "appraisal": appraisal_serializer(updated_appraisal),
+            }
+        ), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@appraisal_bp.patch("/<appraisal_id>/decision")
+def decide_appraisal(appraisal_id):
+    try:
+        if "employee_id" not in session:
+            return jsonify({"error": "You must be logged in"}), 401
+
+        if not ObjectId.is_valid(appraisal_id):
+            return jsonify({"error": "Invalid appraisal ID"}), 400
+
+        data = request.get_json() or {}
+        decision = data.get("decision")
+        comments = data.get("comments")
+
+        if decision not in ["approved", "rejected"]:
+            return jsonify({"error": "Decision must be either approved or rejected"}), 400
+
+        appraisal = collection.find_one({"_id": ObjectId(appraisal_id)})
+        if not appraisal:
+            return jsonify({"error": "Appraisal not found"}), 404
+
+        if appraisal.get("reviewer_id") != session["employee_id"]:
+            return jsonify({"error": "Only the assigned reviewer can make this decision"}), 403
+
+        if appraisal.get("status") != "submitted":
+            return jsonify({"error": "Only submitted appraisals can be approved or rejected"}), 409
+
+        update_fields = {"status": decision, "updated_at": datetime.now()}
+        if isinstance(comments, str):
+            update_fields["comments"] = comments
+
+        collection.update_one({"_id": ObjectId(appraisal_id)}, {"$set": update_fields})
+        updated_appraisal = collection.find_one({"_id": ObjectId(appraisal_id)})
+
+        return jsonify(
+            {
+                "message": f"Appraisal {decision} successfully",
+                "appraisal": appraisal_serializer(updated_appraisal),
+            }
+        ), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

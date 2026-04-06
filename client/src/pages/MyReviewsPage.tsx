@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { ClipboardCheck } from "lucide-react"
 import type { AppraisalStatus } from "@/types"
-import { useMyReviews } from "@/hooks/useAppraisals"
+import { useDecideAppraisal, useMyReviews } from "@/hooks/useAppraisals"
 import AppraisalCard from "@/components/AppraisalCard"
 import Spinner from "@/components/Spinner"
 import EmptyState from "@/components/EmptyState"
@@ -18,6 +18,7 @@ const tabs: { label: string; value: AppraisalStatus | "all" }[] = [
 export default function MyReviewsPage() {
     const [filter, setFilter] = useState<AppraisalStatus | "all">("all")
     const { data, isLoading } = useMyReviews()
+    const decideAppraisal = useDecideAppraisal()
 
     if (isLoading) return <Spinner />
 
@@ -49,7 +50,44 @@ export default function MyReviewsPage() {
             {filtered.length > 0 ? (
                 <div className="appraisals-grid">
                     {filtered.map((appraisal) => (
-                        <AppraisalCard key={appraisal.id} appraisal={appraisal} />
+                        <div key={appraisal.id}>
+                            <AppraisalCard appraisal={appraisal} />
+                            {appraisal.status === "submitted" && (
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: "8px",
+                                        marginTop: "8px",
+                                        justifyContent: "flex-end",
+                                    }}
+                                >
+                                    <button
+                                        className="btn btn-success btn-sm"
+                                        disabled={decideAppraisal.isPending}
+                                        onClick={() =>
+                                            decideAppraisal.mutate({
+                                                id: appraisal.id,
+                                                payload: { decision: "approved" },
+                                            })
+                                        }
+                                    >
+                                        Approve
+                                    </button>
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        disabled={decideAppraisal.isPending}
+                                        onClick={() =>
+                                            decideAppraisal.mutate({
+                                                id: appraisal.id,
+                                                payload: { decision: "rejected" },
+                                            })
+                                        }
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ))}
                 </div>
             ) : (

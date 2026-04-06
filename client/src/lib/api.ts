@@ -1,10 +1,17 @@
 import api from "./axios"
 import type {
     Appraisal,
+    AppraisalDecisionPayload,
+    AppraisalHistoryResponse,
+    AppraisalWriteResponse,
     AppraisalStatus,
     CreateAppraisalPayload,
     Employee,
     LoginPayload,
+    MyAppraisalSummary,
+    MyAppraisalsResponse,
+    MyReviewQueueResponse,
+    MyReviewsResponse,
     SessionUser,
     SignupPayload,
     UpdateAppraisalPayload,
@@ -71,7 +78,7 @@ export const appraisalApi = {
     },
 
     create: async (payload: CreateAppraisalPayload) => {
-        const { data } = await api.post<{ message: string; appraisal: Appraisal }>(
+        const { data } = await api.post<AppraisalWriteResponse>(
             "/appraisals/",
             payload
         )
@@ -79,7 +86,7 @@ export const appraisalApi = {
     },
 
     update: async (id: string, payload: UpdateAppraisalPayload) => {
-        const { data } = await api.put<{ message: string; appraisal: Appraisal }>(
+        const { data } = await api.put<AppraisalWriteResponse>(
             `/appraisals/${id}`,
             payload
         )
@@ -92,28 +99,58 @@ export const appraisalApi = {
     },
 
     updateStatus: async (id: string, status: AppraisalStatus) => {
-        const { data } = await api.patch<{ message: string; appraisal: Appraisal }>(
+        const { data } = await api.patch<AppraisalWriteResponse>(
             `/appraisals/${id}/status`,
             { status }
         )
         return data
     },
 
+    submit: async (id: string) => {
+        const { data } = await api.post<AppraisalWriteResponse>(
+            `/appraisals/${id}/submit`
+        )
+        return data
+    },
+
+    decide: async (id: string, payload: AppraisalDecisionPayload) => {
+        const { data } = await api.patch<AppraisalWriteResponse>(
+            `/appraisals/${id}/decision`,
+            payload
+        )
+        return data
+    },
+
     getMyAppraisals: async () => {
-        const { data } = await api.get<{
-            count: number
-            employee_id: string
-            appraisals: Appraisal[]
-        }>("/appraisals/my/appraisals")
+        const { data } = await api.get<MyAppraisalsResponse>("/appraisals/my/appraisals")
         return data
     },
 
     getMyReviews: async () => {
-        const { data } = await api.get<{
-            count: number
-            reviewer_id: string
-            appraisals: Appraisal[]
-        }>("/appraisals/my/reviews")
+        const { data } = await api.get<MyReviewsResponse>("/appraisals/my/reviews")
+        return data
+    },
+
+    getMySummary: async () => {
+        const { data } = await api.get<MyAppraisalSummary>("/appraisals/my/summary")
+        return data
+    },
+
+    getMyReviewQueue: async (filters?: { status?: AppraisalStatus; limit?: number }) => {
+        const params = new URLSearchParams()
+        if (filters?.status) params.set("status", filters.status)
+        if (typeof filters?.limit === "number") params.set("limit", String(filters.limit))
+        const query = params.toString()
+        const suffix = query ? `?${query}` : ""
+        const { data } = await api.get<MyReviewQueueResponse>(`/appraisals/my/review-queue${suffix}`)
+        return data
+    },
+
+    getEmployeeHistory: async (employeeId: string, limit?: number) => {
+        const suffix = typeof limit === "number" ? `?limit=${limit}` : ""
+        const { data } = await api.get<AppraisalHistoryResponse>(
+            `/appraisals/employee/${employeeId}/history${suffix}`
+        )
         return data
     },
 }

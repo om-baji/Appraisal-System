@@ -61,3 +61,44 @@ export interface SessionUser {
     employee_id: string
     employee_name: string
 }
+
+export interface MyAppraisalSummary {
+    employee_id: string
+    my_appraisals_count: number
+    my_reviews_count: number
+    approved_count: number
+    submitted_reviews_count: number
+    average_rating: number
+}
+
+export interface AppraisalCollectionResponse {
+    count: number
+    appraisals: Appraisal[]
+}
+
+export interface MyReviewQueueResponse extends AppraisalCollectionResponse {
+    reviewer_id: string
+    status: AppraisalStatus
+}
+
+export interface MyAppraisalsResponse extends AppraisalCollectionResponse {
+    employee_id: string
+}
+
+export interface MyReviewsResponse extends AppraisalCollectionResponse {
+    reviewer_id: string
+}
+
+export interface AppraisalHistoryResponse extends AppraisalCollectionResponse {
+    employee_id: string
+}
+
+export interface AppraisalWriteResponse {
+    message: string
+    appraisal: Appraisal
+}
+
+export interface AppraisalDecisionPayload {
+    decision: "approved" | "rejected"
+    comments?: string
+}

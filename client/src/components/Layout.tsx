@@ -1,5 +1,6 @@
+import { useEffect } from "react"
 import { NavLink, Outlet, useLocation } from "react-router"
-import { useAtomValue } from "jotai"
+import { useAtom, useAtomValue } from "jotai"
 import {
     LayoutDashboard,
     FileText,
@@ -7,8 +8,11 @@ import {
     BarChart3,
     Users,
     LogOut,
+    Moon,
+    Sun,
 } from "lucide-react"
 import { userAtom } from "@/store/auth"
+import { themeAtom } from "@/store/theme"
 import { useLogout } from "@/hooks/useAuth"
 import "./Layout.css"
 
@@ -31,8 +35,13 @@ const pageTitles: Record<string, string> = {
 
 export default function Layout() {
     const user = useAtomValue(userAtom)
+    const [theme, setTheme] = useAtom(themeAtom)
     const logout = useLogout()
     const location = useLocation()
+
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme)
+    }, [theme])
 
     const currentTitle =
         pageTitles[location.pathname] ??
@@ -92,6 +101,14 @@ export default function Layout() {
             <div className="layout-main">
                 <header className="layout-topbar">
                     <span className="layout-topbar-title">{currentTitle}</span>
+                    <button
+                        className="layout-theme-btn"
+                        onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+                    >
+                        {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                        <span>{theme === "light" ? "Dark" : "Light"}</span>
+                    </button>
                 </header>
                 <main className="layout-content">
                     <Outlet />
